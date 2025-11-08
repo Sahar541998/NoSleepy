@@ -6,14 +6,75 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B876B63D2EBFB75300ED3C72 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B876B63C2EBFB75300ED3C72 /* WidgetKit.framework */; };
+		B876B63F2EBFB75300ED3C72 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B876B63E2EBFB75300ED3C72 /* SwiftUI.framework */; };
+		B876B64E2EBFB75400ED3C72 /* NoSleepyLiveActivityWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B876B63A2EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B876B64C2EBFB75400ED3C72 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B876B61F2EBFB71A00ED3C72 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B876B6392EBFB75300ED3C72;
+			remoteInfo = NoSleepyLiveActivityWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B876B6532EBFB75400ED3C72 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B876B64E2EBFB75400ED3C72 /* NoSleepyLiveActivityWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		B876B6272EBFB71A00ED3C72 /* NoSleepy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoSleepy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B876B63A2EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NoSleepyLiveActivityWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B876B63C2EBFB75300ED3C72 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		B876B63E2EBFB75300ED3C72 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B876B64F2EBFB75400ED3C72 /* Exceptions for "NoSleepyLiveActivityWidget" folder in "NoSleepyLiveActivityWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B876B6392EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension */;
+		};
+		B876B6552EBFB7B000ED3C72 /* Exceptions for "NoSleepy" folder in "NoSleepy" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B876B6262EBFB71A00ED3C72 /* NoSleepy */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B876B6292EBFB71A00ED3C72 /* NoSleepy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B876B6552EBFB7B000ED3C72 /* Exceptions for "NoSleepy" folder in "NoSleepy" target */,
+			);
 			path = NoSleepy;
+			sourceTree = "<group>";
+		};
+		B876B6402EBFB75300ED3C72 /* NoSleepyLiveActivityWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B876B64F2EBFB75400ED3C72 /* Exceptions for "NoSleepyLiveActivityWidget" folder in "NoSleepyLiveActivityWidgetExtension" target */,
+			);
+			path = NoSleepyLiveActivityWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +87,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B876B6372EBFB75300ED3C72 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B876B63F2EBFB75300ED3C72 /* SwiftUI.framework in Frameworks */,
+				B876B63D2EBFB75300ED3C72 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,6 +103,8 @@
 			isa = PBXGroup;
 			children = (
 				B876B6292EBFB71A00ED3C72 /* NoSleepy */,
+				B876B6402EBFB75300ED3C72 /* NoSleepyLiveActivityWidget */,
+				B876B63B2EBFB75300ED3C72 /* Frameworks */,
 				B876B6282EBFB71A00ED3C72 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +113,18 @@
 			isa = PBXGroup;
 			children = (
 				B876B6272EBFB71A00ED3C72 /* NoSleepy.app */,
+				B876B63A2EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B876B63B2EBFB75300ED3C72 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B876B63C2EBFB75300ED3C72 /* WidgetKit.framework */,
+				B876B63E2EBFB75300ED3C72 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,10 +137,12 @@
 				B876B6232EBFB71A00ED3C72 /* Sources */,
 				B876B6242EBFB71A00ED3C72 /* Frameworks */,
 				B876B6252EBFB71A00ED3C72 /* Resources */,
+				B876B6532EBFB75400ED3C72 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B876B64D2EBFB75400ED3C72 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B876B6292EBFB71A00ED3C72 /* NoSleepy */,
@@ -69,6 +153,28 @@
 			productName = NoSleepy;
 			productReference = B876B6272EBFB71A00ED3C72 /* NoSleepy.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B876B6392EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B876B6502EBFB75400ED3C72 /* Build configuration list for PBXNativeTarget "NoSleepyLiveActivityWidgetExtension" */;
+			buildPhases = (
+				B876B6362EBFB75300ED3C72 /* Sources */,
+				B876B6372EBFB75300ED3C72 /* Frameworks */,
+				B876B6382EBFB75300ED3C72 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B876B6402EBFB75300ED3C72 /* NoSleepyLiveActivityWidget */,
+			);
+			name = NoSleepyLiveActivityWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = NoSleepyLiveActivityWidgetExtension;
+			productReference = B876B63A2EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +187,9 @@
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					B876B6262EBFB71A00ED3C72 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					B876B6392EBFB75300ED3C72 = {
 						CreatedOnToolsVersion = 16.4;
 					};
 				};
@@ -100,12 +209,20 @@
 			projectRoot = "";
 			targets = (
 				B876B6262EBFB71A00ED3C72 /* NoSleepy */,
+				B876B6392EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		B876B6252EBFB71A00ED3C72 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B876B6382EBFB75300ED3C72 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +239,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B876B6362EBFB75300ED3C72 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B876B64D2EBFB75400ED3C72 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B876B6392EBFB75300ED3C72 /* NoSleepyLiveActivityWidgetExtension */;
+			targetProxy = B876B64C2EBFB75400ED3C72 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		B876B6312EBFB71A00ED3C72 /* Debug */ = {
@@ -253,6 +385,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NoSleepy/Info.plist;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -272,10 +406,11 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -292,6 +427,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NoSleepy/Info.plist;
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -311,11 +448,77 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Release;
+		};
+		B876B6512EBFB75400ED3C72 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6558H5YY7S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NoSleepyLiveActivityWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NoSleepyLiveActivityWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = sahar.NoSleepy.NoSleepyLiveActivityWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B876B6522EBFB75400ED3C72 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6558H5YY7S;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NoSleepyLiveActivityWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NoSleepyLiveActivityWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = sahar.NoSleepy.NoSleepyLiveActivityWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -336,6 +539,15 @@
 			buildConfigurations = (
 				B876B6342EBFB71A00ED3C72 /* Debug */,
 				B876B6352EBFB71A00ED3C72 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B876B6502EBFB75400ED3C72 /* Build configuration list for PBXNativeTarget "NoSleepyLiveActivityWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B876B6512EBFB75400ED3C72 /* Debug */,
+				B876B6522EBFB75400ED3C72 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
