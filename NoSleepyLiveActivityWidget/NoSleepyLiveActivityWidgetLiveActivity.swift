@@ -1,10 +1,3 @@
-//
-//  NoSleepyLiveActivityWidgetLiveActivity.swift
-//  NoSleepyLiveActivityWidget
-//
-//  Created by Sahar Levy on 08/11/2025.
-//
-
 import ActivityKit
 import WidgetKit
 import SwiftUI

@@ -1,10 +1,3 @@
-//
-//  PermissionRequirement.swift
-//  NoSleepy
-//
-//  Created by GPT-5 Codex on 08/11/2025.
-//
-
 import SwiftUI
 
 enum PermissionStatus: Equatable {

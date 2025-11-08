@@ -1,10 +1,3 @@
-//
-//  NoSleepyLiveActivityWidgetControl.swift
-//  NoSleepyLiveActivityWidget
-//
-//  Created by Sahar Levy on 08/11/2025.
-//
-
 import Foundation
 
 // Disabled - not needed for NoSleepy and causes AppIntents training errors

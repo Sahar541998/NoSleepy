@@ -401,7 +401,7 @@ final class ContentViewModel: ObservableObject {
 
         cancelTestSimulation(resetMessage: false)
         isRunningTest = true
-        testStatusMessage = "Test running… wake-up alert in 10 seconds."
+        testStatusMessage = "Test running… wake-up alert in 5 seconds."
 
         let start = monitoringPhase.startDate ?? Date()
         let currentPhase: MonitoringPhase
@@ -411,11 +411,11 @@ final class ContentViewModel: ObservableObject {
         default:
             currentPhase = monitoringPhase
         }
-        setMonitoringPhase(currentPhase, message: "Test running… wake-up alert in 10 seconds.")
+        setMonitoringPhase(currentPhase, message: "Test running… wake-up alert in 5 seconds.")
 
         testSimulationTask?.cancel()
         testSimulationTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 10 * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: 5 * 1_000_000_000)
             guard let strongSelf = self else { return }
             if Task.isCancelled { return }
             await MainActor.run { [weak self] in
@@ -511,6 +511,7 @@ final class ContentViewModel: ObservableObject {
                 guard let strongSelf = self else { return }
                 if Task.isCancelled { return }
                 await strongSelf.speakWakeUpCue()
+                AudioServicesPlaySystemSound(1304)
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
@@ -532,28 +533,32 @@ final class ContentViewModel: ObservableObject {
 
     private func configureAudioSessionIfNeeded() {
         guard !audioSessionConfigured else { return }
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, options: [.duckOthers])
-            try session.setActive(true, options: [])
-            audioSessionConfigured = true
-        } catch {
-            #if DEBUG
-            print("[NoSleepy] Failed to configure audio session: \(error)")
-            #endif
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, !self.audioSessionConfigured else { return }
+            do {
+                let session = AVAudioSession.sharedInstance()
+                try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+                if (try? session.setActive(true, options: [])) != nil {
+                    self.audioSessionConfigured = true
+                }
+            } catch {
+                #if DEBUG
+                print("[NoSleepy] Failed to configure audio session category: \(error)")
+                #endif
+            }
         }
     }
 
     private func deactivateAudioSessionIfPossible() {
         guard audioSessionConfigured else { return }
         guard soundLoopTask == nil else { return }
-        Task.detached {
+        DispatchQueue.main.async {
             do {
                 let session = AVAudioSession.sharedInstance()
-                try session.setActive(false, options: [.notifyOthersOnDeactivation])
+                _ = try? session.setActive(false, options: [.notifyOthersOnDeactivation])
             } catch {
                 #if DEBUG
-                print("[NoSleepy] Failed to deactivate audio session: \(error)")
+                print("[NoSleepy] Failed to deactivate audio session category: \(error)")
                 #endif
             }
         }
@@ -562,10 +567,15 @@ final class ContentViewModel: ObservableObject {
 
     @MainActor
     private func speakWakeUpCue() {
-        guard !speechSynthesizer.isSpeaking else { return }
-        let utterance = AVSpeechUtterance(string: "Wake up!")
-        utterance.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier)
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        let utterance = AVSpeechUtterance(string: "Wake up now!")
+        if let voice = AVSpeechSynthesisVoice(language: AVSpeechSynthesisVoice.currentLanguageCode()) {
+            utterance.voice = voice
+        }
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7
+        utterance.volume = 1.0
         speechSynthesizer.speak(utterance)
     }
 }

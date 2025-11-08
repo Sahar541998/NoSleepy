@@ -1,10 +1,3 @@
-//
-//  SleepDetectionManager.swift
-//  NoSleepy
-//
-//  Created by GPT-5 Codex on 08/11/2025.
-//
-
 import Foundation
 import HealthKit
 
@@ -21,7 +14,7 @@ final class SleepDetectionManager: SleepDetectionManaging {
             return false
         }
 
-        let windowStart = Date().addingTimeInterval(-50 * 60) // last 5 minutes
+        let windowStart = Date().addingTimeInterval(-5 * 60) // last 5 minutes
         let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: Date(), options: .strictEndDate)
         let descriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
 
@@ -61,8 +54,7 @@ final class SleepDetectionManager: SleepDetectionManaging {
         ]
 
         if let sleepValue = HKCategoryValueSleepAnalysis(rawValue: latestSample.value) {
-//            return asleepValues.contains(sleepValue) && latestSample.endDate >= Date().addingTimeInterval(-5 * 60)
-            return asleepValues.contains(sleepValue) && latestSample.endDate >= Date().addingTimeInterval(-50 * 60)
+            return asleepValues.contains(sleepValue) && latestSample.endDate >= Date().addingTimeInterval(-5 * 60)
         }
 
         return false

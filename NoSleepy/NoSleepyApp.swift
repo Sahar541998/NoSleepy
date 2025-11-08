@@ -1,10 +1,3 @@
-//
-//  NoSleepyApp.swift
-//  NoSleepy
-//
-//  Created by Sahar Levy on 08/11/2025.
-//
-
 import SwiftUI
 
 @main

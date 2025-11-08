@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  NoSleepy
-//
-//  Created by Sahar Levy on 08/11/2025.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -186,6 +179,11 @@ struct ContentView: View {
                         title: "Enable Live Activities",
                         detail: "Keep the app running so alerts reach the Dynamic Island instantly.",
                         icon: "waveform.path.ecg.rectangle"
+                    )
+                    infoRow(
+                        title: "Background checks",
+                        detail: "NoSleepy checks every 5 minutes to see if you're nodding off.",
+                        icon: "clock.arrow.2.circlepath"
                     )
                     infoRow(
                         title: "Stay awake",
