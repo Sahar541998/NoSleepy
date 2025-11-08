@@ -1,6 +1,8 @@
 import SwiftUI
 import WidgetKit
 
+private let openAppURL = URL(string: "nosleepy://monitoring")!
+
 struct MonitoringWidgetEntry: TimelineEntry {
     let date: Date
 }
@@ -26,32 +28,50 @@ struct NoSleepyLiveActivityWidgetEntryView: View {
     var entry: MonitoringWidgetEntry
 
     var body: some View {
-        VStack(spacing: 12) {
+        let content = VStack(spacing: 12) {
             Text("🕵️")
                 .font(.system(size: 44))
-            Text("NoSleepy Monitor")
+            Text("Start Monitoring")
                 .font(.headline)
-                .multilineTextAlignment(.center)
-            Text("Keep NoSleepy open to stay awake.")
+            Text("Open NoSleepy to enable the watcher.")
                 .font(.footnote)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
+            Link(destination: openAppURL) {
+                Label("Open NoSleepy", systemImage: "play.circle.fill")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color.accentColor.opacity(0.2))
+                    )
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-        .background(Color(.systemBackground))
+
+        if #available(iOS 17.0, *) {
+            content
+                .containerBackground(.fill.tertiary, for: .widget)
+        } else {
+            content
+                .background(Color(.systemBackground))
+        }
     }
 }
 
-struct NoSleepyLiveActivityWidget: Widget {
+public struct NoSleepyLiveActivityWidget: Widget {
     let kind: String = "NoSleepyLiveActivityWidget"
 
-    var body: some WidgetConfiguration {
+    public init() {}
+
+    public var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MonitoringProvider()) { entry in
             NoSleepyLiveActivityWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("NoSleepy Monitor")
-        .description("Glance at the NoSleepy monitoring status.")
+        .description("A quick way to open NoSleepy and start monitoring.")
         .supportedFamilies(supportedFamilies)
     }
 
@@ -67,5 +87,5 @@ struct NoSleepyLiveActivityWidget: Widget {
 #Preview(as: .systemSmall) {
     NoSleepyLiveActivityWidget()
 } timeline: {
-    MonitoringWidgetEntry(date: .now)
+    MonitoringWidgetEntry(date: Date())
 }
