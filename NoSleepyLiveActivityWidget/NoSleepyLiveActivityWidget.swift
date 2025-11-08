@@ -84,7 +84,7 @@ public struct NoSleepyLiveActivityWidget: Widget {
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .systemMedium) {
     NoSleepyLiveActivityWidget()
 } timeline: {
     MonitoringWidgetEntry(date: Date())
