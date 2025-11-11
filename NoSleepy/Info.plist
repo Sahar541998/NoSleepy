@@ -19,5 +19,12 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<!-- HealthKit usage descriptions:
+	     - NSHealthShareUsageDescription is required to read Health data (heart rate, active energy).
+	     - NSHealthUpdateUsageDescription is recommended to explain intent even if we don't write data. -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>NoSleepy reads your heart rate and motion-related energy to estimate drowsiness in real time and alert you.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>NoSleepy does not write Health data. We only read heart rate and active energy to estimate drowsiness.</string>
 </dict>
 </plist>

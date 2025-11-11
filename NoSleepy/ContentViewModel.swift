@@ -63,11 +63,16 @@ final class ContentViewModel: ObservableObject {
     @Published var isMonitoringEnabled = false
     @Published var healthPermissionStatus: PermissionStatus = .pending
     @Published var liveActivityPermissionStatus: PermissionStatus = .pending
+    @Published var heartRatePermissionStatus: PermissionStatus = .pending
+    @Published var activeEnergyPermissionStatus: PermissionStatus = .pending
     @Published var isRunningTest = false
     @Published var testStatusMessage = "Turn monitoring on to run the demo."
     @Published var isSoundEnabled = true
     @Published private(set) var monitoringPhase: MonitoringPhase = .idle
     @Published private(set) var monitoringStatusMessage: String = "Monitoring is currently paused."
+    @Published var minSleepProbability: Double = 0.7
+    @Published var checkIntervalMinutes: Double = 3.0
+    @Published var sleepLogs: [SleepCheckLogEntry] = []
 
     var primaryEmoji: String { monitoringPhase.primaryEmoji }
     var monitoringHeadline: String { monitoringPhase.headline }
@@ -79,6 +84,8 @@ final class ContentViewModel: ObservableObject {
     private let defaults: UserDefaults
     private let monitoringStateKey = "com.nosleepy.monitoring.enabled"
     private let soundPreferenceKey = "com.nosleepy.settings.soundEnabled"
+    private let minProbabilityKey = "com.nosleepy.settings.minProbability"
+    private let checkIntervalKey = "com.nosleepy.settings.checkIntervalMinutes"
     private var shouldRestoreMonitoring = false
 
     private var monitoringLoopTask: Task<Void, Never>?
@@ -88,6 +95,14 @@ final class ContentViewModel: ObservableObject {
     private let speechSynthesizer = AVSpeechSynthesizer()
     private var audioSessionConfigured = false
     private var liveActivity: Activity<NoSleepyLiveActivityWidgetAttributes>?
+
+    struct SleepCheckLogEntry: Identifiable, Equatable {
+        let id = UUID()
+        let timestamp: Date
+        let probability: Double?
+        let isSleeping: Bool
+        let isError: Bool
+    }
 
     init(
         healthPermissionManager: HealthPermissionManaging = HealthPermissionManager(),
@@ -106,6 +121,23 @@ final class ContentViewModel: ObservableObject {
             defaults.set(true, forKey: soundPreferenceKey)
         }
 
+        if defaults.object(forKey: minProbabilityKey) != nil {
+            let saved = defaults.double(forKey: minProbabilityKey)
+            self.minSleepProbability = max(0.1, min(1.0, saved))
+        } else {
+            self.minSleepProbability = 0.7
+            defaults.set(0.7, forKey: minProbabilityKey)
+        }
+        sleepDetectionManager.setMinCandidateProbability(minSleepProbability)
+
+        if defaults.object(forKey: checkIntervalKey) != nil {
+            let saved = defaults.double(forKey: checkIntervalKey)
+            self.checkIntervalMinutes = max(1.0, min(10.0, saved))
+        } else {
+            self.checkIntervalMinutes = 3.0
+            defaults.set(3.0, forKey: checkIntervalKey)
+        }
+
         setDefaultTestMessage()
         if shouldRestoreMonitoring {
             testStatusMessage = "Restoring monitoring…"
@@ -113,6 +145,63 @@ final class ContentViewModel: ObservableObject {
 
         Task { [weak self] in
             await self?.refreshHealthPermissionStatus(animated: false)
+        }
+    }
+
+    // MARK: - Settings
+    func updateMinSleepProbability(_ value: Double) {
+        let clamped = max(0.1, min(1.0, value))
+        if abs(clamped - minSleepProbability) > .ulpOfOne {
+            minSleepProbability = clamped
+            defaults.set(clamped, forKey: minProbabilityKey)
+            sleepDetectionManager.setMinCandidateProbability(clamped)
+#if DEBUG
+            print("[NoSleepy][VM] Min probability updated to \(String(format: "%.2f", clamped))")
+#endif
+        }
+    }
+
+    func updateCheckIntervalMinutes(_ value: Double) {
+        let clamped = max(1.0, min(10.0, value))
+        if abs(clamped - checkIntervalMinutes) > .ulpOfOne {
+            checkIntervalMinutes = clamped
+            defaults.set(clamped, forKey: checkIntervalKey)
+#if DEBUG
+            print("[NoSleepy][VM] Interval updated to \(Int(clamped))m")
+#endif
+            if monitoringPhase.isMonitoringActive {
+                startMonitoringLoop()
+            }
+        }
+    }
+
+    // MARK: - Logging
+    private func appendSleepLog(isSleeping: Bool) {
+        let snapshot = sleepDetectionManager.lastEvaluationSnapshot()
+        let entry = SleepCheckLogEntry(
+            timestamp: snapshot?.timestamp ?? Date(),
+            probability: snapshot?.probability,
+            isSleeping: isSleeping,
+            isError: (snapshot == nil) || (snapshot?.hadMissingData == true)
+        )
+        sleepLogs.append(entry)
+        pruneOldLogs()
+#if DEBUG
+        if entry.isError {
+            print("[NoSleepy][Log] \(entry.timestamp) Partial data")
+        } else {
+            let p = entry.probability ?? 0
+            print("[NoSleepy][Log] \(entry.timestamp) Sleep probability \(String(format: "%.2f", p)) -> \(entry.isSleeping ? "Sleepy!" : "No Sleepy")")
+        }
+#endif
+    }
+
+    private func pruneOldLogs() {
+        let cutoff = Date().addingTimeInterval(-3600) // last 1 hour
+        sleepLogs = sleepLogs.filter { $0.timestamp >= cutoff }
+        // Keep UI performant
+        if sleepLogs.count > 240 {
+            sleepLogs.removeFirst(sleepLogs.count - 240)
         }
     }
 
@@ -156,8 +245,31 @@ final class ContentViewModel: ObservableObject {
         }
     }
 
+    func handleHeartRatePermissionAction() {
+        switch heartRatePermissionStatus {
+        case .pending:
+            Task { await requestHeartRatePermission() }
+        case .denied:
+            openSettings()
+        case .granted:
+            break
+        }
+    }
+
+    func handleActiveEnergyPermissionAction() {
+        switch activeEnergyPermissionStatus {
+        case .pending:
+            Task { await requestActiveEnergyPermission() }
+        case .denied:
+            openSettings()
+        case .granted:
+            break
+        }
+    }
+
     func sceneDidBecomeActive() async {
         await refreshHealthPermissionStatus()
+        await refreshSpecificHealthPermissionStatuses()
         refreshLiveActivityPermissionStatus()
     }
 
@@ -166,6 +278,9 @@ final class ContentViewModel: ObservableObject {
         withAnimation(.easeInOut(duration: 0.3)) {
             isMonitoringEnabled = true
         }
+#if DEBUG
+        print("[NoSleepy][VM] Monitoring started at \(startDate). Interval=\(Int(checkIntervalMinutes))m, MinProb=\(String(format: "%.2f", minSleepProbability))")
+#endif
         persistMonitoringState(true)
         setDefaultTestMessage()
         setMonitoringPhase(.watching(start: startDate), message: "Watching for drowsiness patterns...")
@@ -176,6 +291,9 @@ final class ContentViewModel: ObservableObject {
     private func stopMonitoring() async {
         monitoringLoopTask?.cancel()
         monitoringLoopTask = nil
+#if DEBUG
+        print("[NoSleepy][VM] Monitoring stopped")
+#endif
         stopHapticsLoop()
         stopSoundLoop()
         cancelTestSimulation(resetMessage: false)
@@ -203,12 +321,18 @@ final class ContentViewModel: ObservableObject {
         monitoringLoopTask?.cancel()
         monitoringLoopTask = Task { [weak self] in
             guard let strongSelf = self else { return }
+#if DEBUG
+            print("[NoSleepy][VM] Loop started with interval \(Int(strongSelf.checkIntervalMinutes))m")
+#endif
             while !Task.isCancelled {
                 let isSleeping = await strongSelf.sleepDetectionManager.isUserLikelySleeping()
                 await MainActor.run {
                     strongSelf.processDetectionResult(isSleeping)
+                    strongSelf.appendSleepLog(isSleeping: isSleeping)
                 }
-                try? await Task.sleep(nanoseconds: 30 * 1_000_000_000)
+                // Poll at the configured interval (1–10 minutes) to balance latency and battery.
+                let seconds = max(60, min(600, Int(strongSelf.checkIntervalMinutes * 60)))
+                try? await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
             }
         }
     }
@@ -351,6 +475,21 @@ final class ContentViewModel: ObservableObject {
         }
     }
 
+    private func refreshSpecificHealthPermissionStatuses(animated: Bool = true) async {
+        async let hr = healthPermissionManager.currentHeartRatePermissionStatus()
+        async let ae = healthPermissionManager.currentActiveEnergyPermissionStatus()
+        let (hrStatus, aeStatus) = await (hr, ae)
+        if animated {
+            withAnimation(.easeInOut(duration: 0.35)) {
+                heartRatePermissionStatus = hrStatus
+                activeEnergyPermissionStatus = aeStatus
+            }
+        } else {
+            heartRatePermissionStatus = hrStatus
+            activeEnergyPermissionStatus = aeStatus
+        }
+    }
+
     private func requestSleepPermissionIfNeeded() async {
         guard healthPermissionStatus == .pending else { return }
         await requestSleepPermission()
@@ -367,6 +506,25 @@ final class ContentViewModel: ObservableObject {
             testStatusMessage = "Sleep access is required to run the demo."
             return
         }
+        // Register background observers after permission is granted
+        sleepDetectionManager.registerHealthObservers()
+        await refreshSpecificHealthPermissionStatuses(animated: true)
+    }
+
+    private func requestHeartRatePermission() async {
+        let status = await healthPermissionManager.requestHeartRatePermission()
+        withAnimation(.easeInOut(duration: 0.45)) {
+            heartRatePermissionStatus = status
+        }
+        await refreshHealthPermissionStatus(animated: true)
+    }
+
+    private func requestActiveEnergyPermission() async {
+        let status = await healthPermissionManager.requestActiveEnergyPermission()
+        withAnimation(.easeInOut(duration: 0.45)) {
+            activeEnergyPermissionStatus = status
+        }
+        await refreshHealthPermissionStatus(animated: true)
     }
 
     private func openSettings() {
@@ -577,5 +735,10 @@ final class ContentViewModel: ObservableObject {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.7
         utterance.volume = 1.0
         speechSynthesizer.speak(utterance)
+    }
+
+    // MARK: - User Activity
+    func noteUserInteraction() {
+        sleepDetectionManager.noteUserInteraction()
     }
 }

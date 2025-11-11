@@ -28,11 +28,18 @@ final class NotificationManager {
             guard settings.authorizationStatus == .authorized ||
                     settings.authorizationStatus == .provisional ||
                     settings.authorizationStatus == .ephemeral else { return }
+            #if DEBUG
+            print("[NoSleepy][Notify] Scheduling time-sensitive alert")
+            #endif
 
             let content = UNMutableNotificationContent()
             content.title = "Wake up!"
             content.body = "NoSleepy noticed you might be asleep. Time to move!"
             content.sound = .default
+            if #available(iOS 15.0, *) {
+                // Time-sensitive alerts surface quickly and can break through Focus if allowed by the user.
+                content.interruptionLevel = .timeSensitive
+            }
 
             let request = UNNotificationRequest(
                 identifier: UUID().uuidString,

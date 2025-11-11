@@ -4,36 +4,87 @@ import HealthKit
 protocol HealthPermissionManaging {
     func currentSleepPermissionStatus() async -> PermissionStatus
     func requestSleepPermission() async -> PermissionStatus
+    // Per-signal queries for granular UI
+    func currentHeartRatePermissionStatus() async -> PermissionStatus
+    func currentActiveEnergyPermissionStatus() async -> PermissionStatus
+    func requestHeartRatePermission() async -> PermissionStatus
+    func requestActiveEnergyPermission() async -> PermissionStatus
 }
 
 final class HealthPermissionManager: HealthPermissionManaging {
     private let healthStore = HKHealthStore()
-    private let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)
+    // We no longer rely on sleepAnalysis; instead we read heart rate and motion-related energy.
+    private let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)
+    private let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)
 
     func currentSleepPermissionStatus() async -> PermissionStatus {
         // isHealthDataAvailable() only checks if HealthKit exists on device, not permissions
-        guard HKHealthStore.isHealthDataAvailable(), let sleepType else {
+        guard HKHealthStore.isHealthDataAvailable() else {
             return .denied
         }
-        
-        // Check if user has been prompted yet
-        let needsPrompt = await needsAuthorizationPrompt(for: sleepType)
-        if needsPrompt {
-            return .pending
+
+        let readableTypes = [heartRateType, activeEnergyType].compactMap { $0 }
+        guard !readableTypes.isEmpty else { return .denied }
+
+        // If ANY type suggests we should request, surface Pending to prompt the user.
+        let shouldRequestAny = await needsAuthorizationPrompt(for: readableTypes)
+        if shouldRequestAny { return .pending }
+
+        // Consider status granted if we have read access to at least one data type,
+        // because we can operate with partial signals (e.g., motion only).
+        let statuses = await verifyReadAccess(for: readableTypes)
+        if statuses.contains(.granted) { return .granted }
+        if statuses.contains(.pending) { return .pending }
+        return .denied
+    }
+
+    // MARK: - Per-signal APIs
+    func currentHeartRatePermissionStatus() async -> PermissionStatus {
+        guard HKHealthStore.isHealthDataAvailable(), let heartRateType else { return .denied }
+        if await needsAuthorizationPrompt(for: [heartRateType]) { return .pending }
+        return await verifyReadAccess(for: heartRateType)
+    }
+
+    func currentActiveEnergyPermissionStatus() async -> PermissionStatus {
+        guard HKHealthStore.isHealthDataAvailable(), let activeEnergyType else { return .denied }
+        if await needsAuthorizationPrompt(for: [activeEnergyType]) { return .pending }
+        return await verifyReadAccess(for: activeEnergyType)
+    }
+
+    func requestHeartRatePermission() async -> PermissionStatus {
+        guard HKHealthStore.isHealthDataAvailable(), let heartRateType else { return .denied }
+        return await withCheckedContinuation { continuation in
+            healthStore.requestAuthorization(toShare: [], read: [heartRateType]) { _, _ in
+                Task {
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    let status = await self.currentHeartRatePermissionStatus()
+                    continuation.resume(returning: status)
+                }
+            }
         }
-        
-        // The actual query is the most reliable way to check READ permission
-        // authorizationStatus(for:) is more about write/share, not read
-        return await verifyReadAccess(for: sleepType)
+    }
+
+    func requestActiveEnergyPermission() async -> PermissionStatus {
+        guard HKHealthStore.isHealthDataAvailable(), let activeEnergyType else { return .denied }
+        return await withCheckedContinuation { continuation in
+            healthStore.requestAuthorization(toShare: [], read: [activeEnergyType]) { _, _ in
+                Task {
+                    try? await Task.sleep(nanoseconds: 250_000_000)
+                    let status = await self.currentActiveEnergyPermissionStatus()
+                    continuation.resume(returning: status)
+                }
+            }
+        }
     }
 
     func requestSleepPermission() async -> PermissionStatus {
-        guard HKHealthStore.isHealthDataAvailable(), let sleepType else {
+        guard HKHealthStore.isHealthDataAvailable() else {
             return .denied
         }
 
         return await withCheckedContinuation { continuation in
-            healthStore.requestAuthorization(toShare: [], read: [sleepType]) { _, _ in
+            let readableTypes = Set([heartRateType, activeEnergyType].compactMap { $0 })
+            healthStore.requestAuthorization(toShare: [], read: readableTypes) { _, _ in
                 Task {
                     // Give the system a tick to finalize state after dismissal
                     try? await Task.sleep(nanoseconds: 250_000_000)
@@ -44,10 +95,23 @@ final class HealthPermissionManager: HealthPermissionManaging {
         }
     }
 
-    private func verifyReadAccess(for type: HKCategoryType) async -> PermissionStatus {
+    private func verifyReadAccess(for types: [HKSampleType]) async -> [PermissionStatus] {
+        await withTaskGroup(of: PermissionStatus.self, returning: [PermissionStatus].self) { group in
+            for type in types {
+                group.addTask { await self.verifyReadAccess(for: type) }
+            }
+            var results: [PermissionStatus] = []
+            for await status in group {
+                results.append(status)
+            }
+            return results
+        }
+    }
+
+    private func verifyReadAccess(for type: HKSampleType) async -> PermissionStatus {
         // Execute actual query - this is the ONLY reliable way to check READ permission
         // authorizationStatus(for:) reflects write/share, not read access
-        return await withCheckedContinuation { continuation in
+        await withCheckedContinuation { continuation in
             let predicate = HKQuery.predicateForSamples(
                 withStart: Date(timeIntervalSince1970: 0),
                 end: Date(),
@@ -58,39 +122,41 @@ final class HealthPermissionManager: HealthPermissionManaging {
                 predicate: predicate,
                 limit: 1,
                 sortDescriptors: nil
-            ) { _, results, error in
-                // The query error is the definitive source for read permission
+            ) { _, _, error in
                 if let hkError = error as? HKError {
                     switch hkError.code {
                     case .errorAuthorizationDenied:
-                        // User explicitly denied read access
                         continuation.resume(returning: .denied)
                         return
                     case .errorAuthorizationNotDetermined:
-                        // Haven't asked yet
                         continuation.resume(returning: .pending)
                         return
                     default:
-                        // Other errors - treat as pending to be safe
                         continuation.resume(returning: .pending)
                         return
                     }
                 }
-                
-                // Query succeeded (even with 0 results) = read permission granted
                 continuation.resume(returning: .granted)
             }
-
             healthStore.execute(query)
         }
     }
 
-    private func needsAuthorizationPrompt(for type: HKCategoryType) async -> Bool {
-        await withCheckedContinuation { continuation in
-            healthStore.getRequestStatusForAuthorization(toShare: [], read: [type]) { status, _ in
-                let needsPrompt = (status == .shouldRequest)
-                continuation.resume(returning: needsPrompt)
+    private func needsAuthorizationPrompt(for types: [HKSampleType]) async -> Bool {
+        await withTaskGroup(of: Bool.self, returning: Bool.self) { group in
+            for type in types {
+                group.addTask {
+                    await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+                        self.healthStore.getRequestStatusForAuthorization(toShare: [], read: [type]) { status, _ in
+                            continuation.resume(returning: status == .shouldRequest)
+                        }
+                    }
+                }
             }
+            for await should in group {
+                if should { return true }
+            }
+            return false
         }
     }
 }

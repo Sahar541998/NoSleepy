@@ -15,6 +15,7 @@ struct ContentView: View {
                         monitoringCard
                         healthPermissionCard
                         liveActivityPermissionCard
+						adjustmentsCard
                         howItWorksCard
                         testCard
                     }
@@ -24,12 +25,114 @@ struct ContentView: View {
             }
             .ignoresSafeArea(edges: .top)
             .toolbar(.hidden, for: .navigationBar)
+            // Treat any touch/drag as active interaction to support inactivity tracking.
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                TapGesture().onEnded { viewModel.noteUserInteraction() }
+            )
         }
         .task { await viewModel.onAppear() }
         .onChange(of: scenePhase) { newPhase in
             guard newPhase == .active else { return }
             Task { await viewModel.sceneDidBecomeActive() }
         }
+    }
+
+    private var adjustmentsCard: some View {
+        glassCard {
+            VStack(alignment: .leading, spacing: 18) {
+                Label("Adjustments", systemImage: "slider.horizontal.3")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Text("Minimum sleep probability")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Text(String(format: "%.2f", viewModel.minSleepProbability))
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(.white.opacity(0.85))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.white.opacity(0.12))
+                            )
+                    }
+
+                    Slider(
+                        value: Binding(
+                            get: { viewModel.minSleepProbability },
+                            set: { viewModel.updateMinSleepProbability($0) }
+                        ),
+                        in: 0.1...1.0,
+						step: 0.1
+                    )
+                    .tint(.teal)
+                }
+
+				VStack(alignment: .leading, spacing: 14) {
+					HStack {
+						Text("Check interval")
+							.font(.subheadline.weight(.semibold))
+							.foregroundStyle(.white)
+						Spacer()
+						Text("\(Int(viewModel.checkIntervalMinutes)) min")
+							.font(.footnote.monospacedDigit())
+							.foregroundStyle(.white.opacity(0.85))
+							.padding(.horizontal, 10)
+							.padding(.vertical, 6)
+							.background(
+								RoundedRectangle(cornerRadius: 10, style: .continuous)
+									.fill(Color.white.opacity(0.12))
+							)
+					}
+
+					Slider(
+						value: Binding(
+							get: { viewModel.checkIntervalMinutes },
+							set: { viewModel.updateCheckIntervalMinutes($0) }
+						),
+						in: 1.0...10.0,
+						step: 1.0
+					)
+					.tint(.teal)
+				}
+
+                let (title, color) = riskDescriptor(for: viewModel.minSleepProbability)
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 10, height: 10)
+                    Text(title)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(color.opacity(0.18))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(.white.opacity(0.18), lineWidth: 1)
+                )
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.minSleepProbability)
+    }
+
+    private func riskDescriptor(for value: Double) -> (String, Color) {
+		if value <= 0.4 {
+			return ("Too low", .red)
+		} else if value <= 0.6 {
+			return ("Moderate — still risky", .orange)
+		} else {
+			return ("You're Covered", .green)
+		}
     }
 
     private var header: some View {
@@ -111,13 +214,29 @@ struct ContentView: View {
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.white)
 
-                    Spacer()
-
-                    permissionBadge(for: viewModel.healthPermissionStatus)
+					Spacer()
                 }
+				
+				VStack(alignment: .leading, spacing: 14) {
+					dataPermissionRow(
+						title: "Heart Rate",
+						detail: "Used to estimate drowsiness in real time.",
+						icon: "heart.fill",
+						status: viewModel.heartRatePermissionStatus,
+						action: { viewModel.handleHeartRatePermissionAction() }
+					)
+					dataPermissionRow(
+						title: "Active Energy",
+						detail: "Proxy for motion/low activity over time.",
+						icon: "bolt.fill",
+						status: viewModel.activeEnergyPermissionStatus,
+						action: { viewModel.handleActiveEnergyPermissionAction() }
+					)
+				}
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.healthPermissionStatus)
+		.animation(.easeInOut(duration: 0.25), value: viewModel.heartRatePermissionStatus)
+		.animation(.easeInOut(duration: 0.25), value: viewModel.activeEnergyPermissionStatus)
     }
 
     private var liveActivityPermissionCard: some View {
@@ -156,6 +275,45 @@ struct ContentView: View {
                     .stroke(.white.opacity(0.25), lineWidth: 1)
             )
     }
+	
+	private func dataPermissionRow(
+		title: String,
+		detail: String,
+		icon: String,
+		status: PermissionStatus,
+		action: @escaping () -> Void
+	) -> some View {
+		HStack(alignment: .center, spacing: 12) {
+			Image(systemName: icon)
+				.font(.headline)
+				.foregroundStyle(.white.opacity(0.9))
+				.frame(width: 24, height: 24)
+			
+			VStack(alignment: .leading, spacing: 2) {
+				Text(title)
+					.font(.subheadline.weight(.semibold))
+					.foregroundStyle(.white)
+				Text(detail)
+					.font(.caption)
+					.foregroundStyle(.white.opacity(0.72))
+			}
+			
+			Spacer()
+			
+			Button {
+				action()
+			} label: {
+				permissionBadge(for: status)
+			}
+			.buttonStyle(.plain)
+		}
+	}
+
+	private func timeString(_ date: Date) -> String {
+		let formatter = DateFormatter()
+		formatter.dateFormat = "HH:mm"
+		return formatter.string(from: date)
+	}
 
     private var howItWorksCard: some View {
         glassCard {
@@ -235,6 +393,47 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .disabled(viewModel.isRunningTest || !viewModel.isMonitoringEnabled)
                 .opacity((viewModel.isRunningTest || !viewModel.isMonitoringEnabled) ? 0.65 : 1)
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Recent Checks (last 1h)", systemImage: "clock.arrow.circlepath")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Spacer()
+                    }
+
+                    if viewModel.sleepLogs.isEmpty {
+                        Text("No checks yet.")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(viewModel.sleepLogs.suffix(40)) { entry in
+                                HStack(spacing: 8) {
+                                    Text(timeString(entry.timestamp))
+                                        .font(.caption.monospacedDigit())
+                                        .foregroundStyle(.white.opacity(0.7))
+
+                                    if entry.isError {
+                                        Text("Partial data")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.red)
+                                    } else {
+                                        let p = entry.probability ?? 0
+                                        Text("Sleep probability - \(String(format: "%.2f", p)) - ")
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.9))
+                                        Text(entry.isSleeping ? "Sleepy!" : "No Sleepy")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(entry.isSleeping ? .green : .white)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
