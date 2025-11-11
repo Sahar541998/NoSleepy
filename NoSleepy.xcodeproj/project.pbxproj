@@ -386,6 +386,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoSleepy/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "NoSleepy reads your sleep analysis data to detect drowsiness and keep you awake.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "NoSleepy writes summary entries to reflect monitoring activity.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -428,6 +430,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoSleepy/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "NoSleepy reads your sleep analysis data to detect drowsiness and keep you awake.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "NoSleepy writes summary entries to reflect monitoring activity.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
